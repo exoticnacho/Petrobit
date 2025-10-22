@@ -334,4 +334,22 @@ impl TamagotchiContract {
 
         pet
     }
+
+    // Fungsi untuk mengupdate koin (dipanggil dari frontend setelah investasi selesai)
+    pub fn update_coins(env: Env, owner: Address, amount: i128) -> i128 {
+        owner.require_auth();
+
+        let coins_key = DataKey::Coins(owner.clone());
+        let current_coins: i128 = env.storage().instance().get(&coins_key).unwrap_or(0);
+        
+        // Cek jika koin akan menjadi negatif (hanya jika 'amount' negatif)
+        if amount < 0 && current_coins < amount.abs() {
+             panic!("Insufficient coins to burn.");
+        }
+
+        let new_coins = current_coins.checked_add(amount).unwrap_or(i128::MAX);
+        env.storage().instance().set(&coins_key, &new_coins);
+
+        new_coins
+    }
 }
