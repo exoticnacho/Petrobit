@@ -1,11 +1,12 @@
 import { useCallback, useMemo } from "react";
-import * as Tamago from "../../packages/CDZM6CDTSCJCHYXBJKO2YWGEPPLND7YTKVGANDUXVK7HRTBW4K67NAYL";
+import * as Tamago from "../../packages/CAF5P4ACWH2YIOYRTSMYVTQLDJPLWNXAHAMWV4YEV3WBDAPS55HSWTHS";
 import { useSubmitTransaction } from "./use-submit-transaction";
 import { useWallet } from "./use-wallet";
 
 // Definisikan tipe untuk Client Soroban yang diperbarui (dengan 'as any' untuk exercise)
 interface CustomClient extends Tamago.Client {
   exercise: (args: { owner: string }) => Promise<any>;
+  update_coins: (args: { owner: string, amount: number | bigint }) => Promise<any>; // ADDED: Update Coins
 }
 
 export interface WalletState {
@@ -104,7 +105,7 @@ export const useStellar = () => {
     return execTx(getContractClient!.sleep({ owner: address! }));
   };
 
-  // BARU: Hook untuk aksi Exercise
+  // Hook untuk aksi Exercise
   const exercisePet = () => {
     const tx = getContractClient!.exercise({ owner: address! });
     return execTx(tx);
@@ -115,6 +116,14 @@ export const useStellar = () => {
     return execTx(getContractClient!.mint_glasses({ owner: address! }));
   };
 
+  // Hook untuk aksi Update Coins (Mint/Burn)
+  const updateCoins = (amount: number | bigint) => {
+    // Gunakan 'as any' karena typescript binding mungkin belum terupdate,
+    // tapi kontrak sudah di-deploy dengan fungsi ini.
+    const tx = (getContractClient!.update_coins as any)({ owner: address!, amount });
+    return execTx(tx); 
+  };
+
   return {
     createPet,
     getPet,
@@ -123,7 +132,8 @@ export const useStellar = () => {
     playWithPet,
     workWithPet,
     putPetToSleep,
-    exercisePet, // BARU: Tambahkan exercisePet
+    exercisePet, 
     mintGlasses,
+    updateCoins,
   };
 };

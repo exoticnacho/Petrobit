@@ -197,6 +197,10 @@ body {
 }
 
 @layer utilities {
+  .animate-qte-move {
+        animation: qte-move linear forwards;
+    }
+
   .pixel-shadow {
     box-shadow: var(--pixel-shadow);
   }
@@ -208,4 +212,14 @@ body {
   .pixel-text-shadow {
     text-shadow: 2px 2px 0px oklch(0 0 0 / 0.5);
   }
+}
+
+@keyframes qte-move {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        /* Pindah bar 300px (lebar bar container) - 8px (lebar bar) */
+        transform: translateX(calc(300px - 8px));
+    }
 }

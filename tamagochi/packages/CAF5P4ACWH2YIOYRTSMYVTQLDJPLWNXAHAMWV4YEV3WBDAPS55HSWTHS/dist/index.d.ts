@@ -7,7 +7,7 @@ export * as rpc from '@stellar/stellar-sdk/rpc';
 export declare const networks: {
     readonly testnet: {
         readonly networkPassphrase: "Test SDF Network ; September 2015";
-        readonly contractId: "CDZM6CDTSCJCHYXBJKO2YWGEPPLND7YTKVGANDUXVK7HRTBW4K67NAYL";
+        readonly contractId: "CAF5P4ACWH2YIOYRTSMYVTQLDJPLWNXAHAMWV4YEV3WBDAPS55HSWTHS";
     };
 };
 export interface Pet {
@@ -205,6 +205,26 @@ export interface Client {
          */
         simulate?: boolean;
     }) => Promise<AssembledTransaction<Pet>>;
+    /**
+     * Construct and simulate a update_coins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+     */
+    update_coins: ({ owner, amount }: {
+        owner: string;
+        amount: i128;
+    }, options?: {
+        /**
+         * The fee to pay for the transaction. Default: BASE_FEE
+         */
+        fee?: number;
+        /**
+         * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+         */
+        timeoutInSeconds?: number;
+        /**
+         * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+         */
+        simulate?: boolean;
+    }) => Promise<AssembledTransaction<i128>>;
 }
 export declare class Client extends ContractClient {
     readonly options: ContractClientOptions;
@@ -229,5 +249,6 @@ export declare class Client extends ContractClient {
         work: (json: string) => AssembledTransaction<Pet>;
         exercise: (json: string) => AssembledTransaction<Pet>;
         mint_glasses: (json: string) => AssembledTransaction<Pet>;
+        update_coins: (json: string) => AssembledTransaction<bigint>;
     };
 }

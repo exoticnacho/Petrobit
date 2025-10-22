@@ -34,7 +34,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CDZM6CDTSCJCHYXBJKO2YWGEPPLND7YTKVGANDUXVK7HRTBW4K67NAYL",
+    contractId: "CAF5P4ACWH2YIOYRTSMYVTQLDJPLWNXAHAMWV4YEV3WBDAPS55HSWTHS",
   }
 } as const
 
@@ -238,6 +238,26 @@ export interface Client {
     simulate?: boolean;
   }) => Promise<AssembledTransaction<Pet>>
 
+  /**
+   * Construct and simulate a update_coins transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  update_coins: ({owner, amount}: {owner: string, amount: i128}, options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<i128>>
+
 }
 export class Client extends ContractClient {
   static async deploy<T = Client>(
@@ -266,7 +286,8 @@ export class Client extends ContractClient {
         "AAAAAAAAAAAAAAAFc2xlZXAAAAAAAAABAAAAAAAAAAVvd25lcgAAAAAAABMAAAABAAAH0AAAAANQZXQA",
         "AAAAAAAAAAAAAAAEd29yawAAAAEAAAAAAAAABW93bmVyAAAAAAAAEwAAAAEAAAfQAAAAA1BldAA=",
         "AAAAAAAAAAAAAAAIZXhlcmNpc2UAAAABAAAAAAAAAAVvd25lcgAAAAAAABMAAAABAAAH0AAAAANQZXQA",
-        "AAAAAAAAAAAAAAAMbWludF9nbGFzc2VzAAAAAQAAAAAAAAAFb3duZXIAAAAAAAATAAAAAQAAB9AAAAADUGV0AA==" ]),
+        "AAAAAAAAAAAAAAAMbWludF9nbGFzc2VzAAAAAQAAAAAAAAAFb3duZXIAAAAAAAATAAAAAQAAB9AAAAADUGV0AA==",
+        "AAAAAAAAAAAAAAAMdXBkYXRlX2NvaW5zAAAAAgAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAAZhbW91bnQAAAAAAAsAAAABAAAACw==" ]),
       options
     )
   }
@@ -279,6 +300,7 @@ export class Client extends ContractClient {
         sleep: this.txFromJSON<Pet>,
         work: this.txFromJSON<Pet>,
         exercise: this.txFromJSON<Pet>,
-        mint_glasses: this.txFromJSON<Pet>
+        mint_glasses: this.txFromJSON<Pet>,
+        update_coins: this.txFromJSON<i128>
   }
 }

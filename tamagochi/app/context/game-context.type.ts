@@ -10,6 +10,21 @@ export interface PetStats {
   speciesId: number;
 }
 
+// DIPINDAHKAN KE ATAS untuk impor yang lebih bersih
+export interface MoodState {
+  moodType: "boost" | "neutral" | "penalty";
+  message: string;
+  lastMoodCheck: number;
+}
+
+// Tipe untuk melacak investasi pet
+export interface PetInvestment {
+  amount: number;
+  startTime: number;
+  durationHours: number;
+  isActive: boolean;
+}
+
 export interface GameState {
   stats: PetStats;
   coins: number;
@@ -20,6 +35,7 @@ export interface GameState {
   petMood: "happy" | "neutral" | "sad" | "sleeping";
   petName?: string;
   hasRealPet: boolean; // Track if user has created a pet on-chain
+  investment?: PetInvestment;
 }
 
 export interface GameContextType {
@@ -37,4 +53,7 @@ export interface GameContextType {
   createRealPet: (name: string) => void;
   syncWithBlockchain: () => void;
   isLoading: boolean;
+  moodState: MoodState; 
+  startInvestment: (amount: number, durationHours: number) => void;
+  claimInvestment: () => void;
 }

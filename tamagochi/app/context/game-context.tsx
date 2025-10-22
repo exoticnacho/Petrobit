@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useStellar } from "~/hooks/use-stellar";
-import * as Tamago from "../../packages/CDZM6CDTSCJCHYXBJKO2YWGEPPLND7YTKVGANDUXVK7HRTBW4K67NAYL";
+import * as Tamago from "../../packages/CAF5P4ACWH2YIOYRTSMYVTQLDJPLWNXAHAMWV4YEV3WBDAPS55HSWTHS";
 import { useWallet } from "~/hooks/use-wallet";
 import { toast } from "sonner";
-import type { GameState, PetStats, GameContextType } from "./game-context.type";
+import type { GameState, PetStats, GameContextType, MoodState, PetInvestment } from "./game-context.type";
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
@@ -14,17 +14,14 @@ const INITIAL_STATE: GameState = {
   },
   coins: 0, inventory: [], equippedItems: [], isSleeping: false,
   lastUpdate: Date.now(), petMood: "neutral", petName: undefined, hasRealPet: false,
+  investment: undefined, 
 };
 
 // --- TIPE MOOD BARU ---
 type MoodMultiplier = "boost" | "neutral" | "penalty";
 
 // State lokal tambahan untuk menyimpan Mood Multiplier yang tidak ada di kontrak
-interface MoodState {
-    moodType: MoodMultiplier;
-    message: string;
-    lastMoodCheck: number;
-}
+// Interface MoodState dipindahkan ke game-context.type.ts
 const INITIAL_MOOD_STATE: MoodState = {
     moodType: "neutral",
     message: "A perfect day!",
@@ -32,22 +29,13 @@ const INITIAL_MOOD_STATE: MoodState = {
 };
 // -----------------------
 
-
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isConnected } = useWallet();
-  const { getPet, getCoins, createPet, feedPet: feedPetStellar, mintGlasses, playWithPet: playWithPetStellar, workWithPet: workWithPetStellar, putPetToSleep: putPetToSleepStellar, exercisePet: exercisePetStellar } = useStellar();
+  const { getPet, getCoins, createPet, feedPet: feedPetStellar, mintGlasses, playWithPet: playWithPetStellar, workWithPet: workWithPetStellar, putPetToSleep: putPetToSleepStellar, exercisePet: exercisePetStellar, updateCoins } = useStellar()
 
-  const [gameState, setGameState] = useState<GameState>(() => {
-    const saved = localStorage.getItem("pixelPetGame");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // PENTING: Jika ada properti baru yang disimpan di localStorage, pastikan di-merge
-      return { ...INITIAL_STATE, ...parsed, stats: { ...INITIAL_STATE.stats, ...parsed.stats } };
-    }
-    return INITIAL_STATE;
-  });
-  
-  // NEW STATE: State lokal untuk Mood (tidak disimpan di kontrak)
+  const [isLoading, setIsLoading] = useState(false);
+
+  // State lokal untuk Mood (tidak disimpan di kontrak)
   const [moodState, setMoodState] = useState<MoodState>(() => {
       const savedMood = localStorage.getItem("pixelPetMood");
       // Jika mood disimpan lebih dari 24 jam yang lalu, reset mood.
@@ -58,41 +46,31 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return INITIAL_MOOD_STATE;
   });
-  
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Simpan Mood State secara terpisah ke localStorage
-  useEffect(() => {
-    localStorage.setItem("pixelPetMood", JSON.stringify(moodState));
-  }, [moodState]);
+  const [investmentState, setInvestmentState] = useState<PetInvestment | undefined>(
+    () => {
+      const saved = localStorage.getItem("pixelPetInvestment");
+      // Perbaiki potential issue saved == "undefined" string
+      return saved && saved !== "undefined" ? JSON.parse(saved) : undefined;
+    }
+  );
 
-  // --- LOGIC MOOD ACAR HARIAN ---
-  const rollNewMood = useCallback(() => {
-    const moods: MoodState[] = [
-        { moodType: "boost", message: "✨ Energetic Mood: +20% efficiency on Exercise!", lastMoodCheck: Date.now() },
-        { moodType: "penalty", message: "🐌 Grumpy Mood: -50% coin gain from Work.", lastMoodCheck: Date.now() },
-        { moodType: "neutral", message: "A peaceful day. All actions are normal.", lastMoodCheck: Date.now() },
-    ];
-    // Pilih mood secara acak
-    const newMood = moods[Math.floor(Math.random() * moods.length)];
-    setMoodState(newMood);
-    toast.info(`Today's Mood: ${newMood.message}`, { duration: 8000 });
-  }, []);
-
-  // Effect untuk merolling mood setiap 24 jam atau pada startup
-  useEffect(() => {
-      const hoursElapsed = (Date.now() - moodState.lastMoodCheck) / (1000 * 60 * 60);
-      if (hoursElapsed >= 24) {
-          rollNewMood();
-      }
-  }, [moodState.lastMoodCheck, rollNewMood]);
-  // --- END LOGIC MOOD ACAR HARIAN ---
-
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const saved = localStorage.getItem("pixelPetGame");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Memastikan investment state dimuat dari local storage
+      return { ...INITIAL_STATE, ...parsed, stats: { ...INITIAL_STATE.stats, ...parsed.stats }, investment: parsed.investment };
+    }
+    return INITIAL_STATE;
+  });
 
   // Helper to convert blockchain Pet to our PetStats
   const convertPetToStats = useCallback((pet: Tamago.Pet): { stats: PetStats; petName: string } => {
     const stats: PetStats = {
-        hunger: Number(pet.hunger), happy: Number(pet.happiness), energy: Number(pet.energy),
+        hunger: Number(pet.hunger), 
+        happy: Number(pet.happiness), 
+        energy: Number(pet.energy),
         level: Number((pet as any).level), 
         xp: Number((pet as any).xp), 
         nextLevelXp: Number((pet as any).next_level_xp), 
@@ -113,8 +91,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return "neutral";
   }, []); 
 
-
-  // Helper to validate pet action
+  // FIX: Pindahkan definisi validatePetAction ke sini (sebelum executeStellarAction)
   const validatePetAction = useCallback(() => {
     if (!isConnected || !gameState.hasRealPet || isLoading || gameState.stats.hunger <= 0 || gameState.stats.happy <= 0) {
         toast.error(isConnected ? (gameState.hasRealPet ? "Action in progress or Pet is unwell." : "Please create your pet on-chain first!") : "Please connect your wallet first!");
@@ -123,71 +100,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, [isConnected, gameState.hasRealPet, isLoading, gameState.stats.hunger, gameState.stats.happy]);
 
-
-  // Helper to execute Stellar actions
-  const executeStellarAction = useCallback(async (
-    action: () => Promise<Tamago.Pet>, 
-    loadingMessage: string, 
-    successMessage: string,
-    moodType: "feed" | "play" | "work" | "sleep" | "exercise" | "mint" | "create"
-  ) => {
-    if (!validatePetAction()) return;
-
-    setIsLoading(true);
-    toast.loading(loadingMessage, { id: "stellar-tx" });
-
-    try {
-      const pet = await action();
-      toast.dismiss("stellar-tx");
-      
-      const { stats: newStats, petName } = convertPetToStats(pet);
-      const newCoins = await getCoins();
-
-      setGameState(prev => {
-        const equippedItems: string[] = [];
-        if ((pet.accessories as any & 0b0001) > 0) { 
-             equippedItems.push('cool-glasses');
-        }
-
-        const isLevelUp = newStats.level > prev.stats.level;
-        
-        return {
-          ...prev,
-          stats: newStats,
-          coins: Number(newCoins),
-          petName: petName,
-          hasRealPet: pet.is_alive,
-          petMood: calculateMood(newStats, moodType === 'sleep', pet.is_alive),
-          equippedItems: equippedItems,
-          inventory: equippedItems,
-          lastUpdate: Date.now(),
-        }
-      });
-      
-      toast.success(successMessage);
-      
-      // Notifikasi Level Up
-      if (newStats.level > gameState.stats.level) {
-        toast.info(`⬆️ LEVEL UP! Pet reached Level ${newStats.level}!`, { duration: 5000 });
-      }
-
-    } catch (error) {
-      toast.dismiss("stellar-tx");
-      console.error("Stellar action failed:", error);
-      toast.error("❌ Transaction failed! Check console for details.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [validatePetAction, getCoins, convertPetToStats, calculateMood, gameState.stats.level]);
-
-
-  // Handlers untuk aksi pet
-  const feedPet = () => executeStellarAction(feedPetStellar, "🍔 Pet is eating on Stellar...", "🍽️ Pet is full!", "feed");
-  const playWithPet = () => executeStellarAction(playWithPetStellar, "⚽ Pet is playing on Stellar...", "😊 Pet is happy!", "play");
-  const workWithPet = () => executeStellarAction(workWithPetStellar, "💼 Pet is working on Stellar...", "💰 Pet earned coins!", "work");
-  const putPetToSleep = () => executeStellarAction(putPetToSleepStellar, "😴 Pet is sleeping on Stellar...", "💤 Pet is rested!", "sleep");
-  const exercisePet = () => executeStellarAction(exercisePetStellar, "🏃 Pet is exercising on Stellar...", "💪 Pet feels stronger!", "exercise");
-
+  // --- LOGIC MOOD ACAR HARIAN ---
+  const rollNewMood = useCallback(() => {
+    const moods: MoodState[] = [
+        { moodType: "boost", message: "✨ Energetic Mood: +20% efficiency on Exercise!", lastMoodCheck: Date.now() },
+        { moodType: "penalty", message: "🐌 Grumpy Mood: -50% coin gain from Work.", lastMoodCheck: Date.now() },
+        { moodType: "neutral", message: "A peaceful day. All actions are normal.", lastMoodCheck: Date.now() },
+    ];
+    // Pilih mood secara acak
+    const newMood = moods[Math.floor(Math.random() * moods.length)];
+    setMoodState(newMood);
+    toast.info(`Today's Mood: ${newMood.message}`, { duration: 8000 });
+  }, []);
 
   // Sync with blockchain data
   const syncWithBlockchain = useCallback(async () => {
@@ -241,6 +165,165 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isConnected, getPet, getCoins, convertPetToStats, calculateMood, moodState.lastMoodCheck, rollNewMood]); // Tambahkan dependensi moodState dan rollNewMood
 
+  // Helper to execute Stellar actions (Perbaikan: Menggunakan satu fungsi dengan parameter skipSuccessToast)
+  const executeStellarAction = useCallback(async (
+    action: () => Promise<Tamago.Pet>, 
+    loadingMessage: string, 
+    successMessage: string,
+    moodType: "feed" | "play" | "work" | "sleep" | "exercise" | "mint" | "create",
+    skipSuccessToast: boolean = false // Parameter baru untuk melewati toast sukses
+  ) => {
+    if (!validatePetAction()) return;
+
+    setIsLoading(true);
+    toast.loading(loadingMessage, { id: "stellar-tx" });
+
+    try {
+      const pet = await action();
+      toast.dismiss("stellar-tx");
+      
+      const { stats: newStats, petName } = convertPetToStats(pet);
+      const newCoins = await getCoins();
+
+      setGameState(prev => {
+        const equippedItems: string[] = [];
+        if ((pet.accessories as any & 0b0001) > 0) { 
+             equippedItems.push('cool-glasses');
+        }
+
+        const isLevelUp = newStats.level > prev.stats.level;
+        
+        return {
+          ...prev,
+          stats: newStats,
+          coins: Number(newCoins),
+          petName: petName,
+          hasRealPet: pet.is_alive,
+          petMood: calculateMood(newStats, moodType === 'sleep', pet.is_alive),
+          equippedItems: equippedItems,
+          inventory: equippedItems,
+          lastUpdate: Date.now(),
+        }
+      });
+      
+      if (!skipSuccessToast) { // Conditional toast
+        toast.success(successMessage);
+      }
+      
+      // Notifikasi Level Up
+      if (newStats.level > gameState.stats.level) {
+        toast.info(`⬆️ LEVEL UP! Pet reached Level ${newStats.level}!`, { duration: 5000 });
+      }
+
+    } catch (error) {
+      toast.dismiss("stellar-tx");
+      console.error("Stellar action failed:", error);
+      toast.error("❌ Transaction failed! Check console for details.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [validatePetAction, getCoins, convertPetToStats, calculateMood, gameState.stats.level]);
+
+  // Handlers untuk aksi pet
+  const feedPet = () => executeStellarAction(feedPetStellar, "🍔 Pet is eating on Stellar...", "🍽️ Pet is full!", "feed");
+  const playWithPet = () => executeStellarAction(playWithPetStellar, "🚀 QTE Success! Sending play transaction...", "😊 Pet is happy!", "play", true);
+  const workWithPet = () => executeStellarAction(workWithPetStellar, "💼 Pet is working on Stellar...", "💰 Pet earned coins!", "work");
+  const putPetToSleep = () => executeStellarAction(putPetToSleepStellar, "😴 Pet is sleeping on Stellar...", "💤 Pet is rested!", "sleep");
+  const exercisePet = () => executeStellarAction(exercisePetStellar, "🏃 Pet is exercising on Stellar...", "💪 Pet feels stronger!", "exercise");
+
+  const startInvestment = (amount: number, durationHours: number) => {
+    if (!validatePetAction()) return;
+
+    if (gameState.coins < amount) {
+        toast.error("Not enough coins to invest!");
+        return;
+    }
+    
+    // Kurangi koin dari state (asumsi transaksi on-chain untuk burn/transfer terjadi di sini)
+    setGameState(prev => ({ ...prev, coins: prev.coins - amount }));
+    
+    setInvestmentState({
+        amount,
+        startTime: Date.now(),
+        durationHours,
+        isActive: true,
+    });
+
+    toast.success(`📈 Started investing ${amount} coins for ${durationHours} hours!`);
+  };
+
+  const claimInvestment = useCallback(async () => {
+    if (!validatePetAction() || !investmentState) return;
+
+    setIsLoading(true);
+    toast.loading("💰 Calculating and claiming investment...");
+
+    try {
+      const { amount, durationHours } = investmentState;
+      const profitRate = 0.5; // Maksimum 50%
+      const lossRate = 0.2;   // Maksimum -20%
+
+      // Hitung hasil acak (0 = loss, 1 = break even, 2 = profit)
+      const roll = Math.random();
+      let finalAmount = amount;
+      let resultMessage = "";
+
+      if (roll < 0.2) { // 20% chance of loss
+        const loss = Math.floor(amount * lossRate);
+        finalAmount = amount - loss;
+        resultMessage = `❌ Oh no! You lost ${loss} coins. Final amount: ${finalAmount}`;
+      } else if (roll < 0.4) { // 20% chance of break even
+        finalAmount = amount;
+        resultMessage = `😐 Break even! You got your ${amount} coins back.`;
+      } else { // 60% chance of profit
+        const profit = Math.floor(Math.random() * (amount * profitRate)); // Profit acak hingga 50%
+        finalAmount = amount + profit;
+        resultMessage = `🎉 Success! You earned ${profit} coins! Final amount: ${finalAmount}`;
+      }
+
+      // Selisih antara Final Amount dan Amount awal (Invested Amount)
+      // Jika loss, selisihnya negatif, ini akan memicu 'burn' di kontrak.
+      // Jika profit, selisihnya positif, ini akan memicu 'mint' di kontrak.
+      const netChange = finalAmount - amount;
+      
+      // Kirim transaksi ke Stellar untuk mint/burn sisa koin
+      await updateCoins(netChange);
+      
+      toast.dismiss();
+      toast.success(resultMessage, { duration: 8000 });
+      
+    } catch (error) {
+      toast.dismiss();
+      toast.error("⚠️ Failed to claim investment! Check console.");
+    } finally {
+      // Hapus state investasi (terlepas dari sukses/gagal transaksi)
+      setInvestmentState(undefined); 
+      setIsLoading(false);
+      syncWithBlockchain();
+    }
+  }, [validatePetAction, investmentState, updateCoins, syncWithBlockchain]);
+
+  
+  // Simpan Investment State
+  useEffect(() => {
+    localStorage.setItem("pixelPetInvestment", JSON.stringify(investmentState));
+    // Memastikan GameState juga terupdate dengan status Investment
+    setGameState(prev => ({ ...prev, investment: investmentState }));
+  }, [investmentState]);
+
+  // Simpan Mood State secara terpisah ke localStorage
+  useEffect(() => {
+    localStorage.setItem("pixelPetMood", JSON.stringify(moodState));
+  }, [moodState]);
+
+
+  // Effect untuk merolling mood setiap 24 jam atau pada startup
+  useEffect(() => {
+      const hoursElapsed = (Date.now() - moodState.lastMoodCheck) / (1000 * 60 * 60);
+      if (hoursElapsed >= 24) {
+          rollNewMood();
+      }
+  }, [moodState.lastMoodCheck, rollNewMood]);
 
   const createRealPet = async (name: string) => {
     if (!isConnected || isLoading) return;
@@ -350,6 +433,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createRealPet,
         syncWithBlockchain,
         isLoading,
+        moodState,
+        startInvestment, 
+        claimInvestment,
       }}
     >
       {children}
@@ -362,5 +448,5 @@ export const useGame = () => {
   if (context === undefined) {
     throw new Error("useGame must be used within a GameProvider");
   }
-  return { ...context, moodState: context.moodState }; // Export moodState
+  return context; 
 };

@@ -60,7 +60,6 @@ export const CreatePetDialog: React.FC = () => {
               placeholder="Enter pet name..."
               className="col-span-3 border-2 border-border"
               maxLength={20}
-              disabled={isLoading}
             />
           </div>
         </div>

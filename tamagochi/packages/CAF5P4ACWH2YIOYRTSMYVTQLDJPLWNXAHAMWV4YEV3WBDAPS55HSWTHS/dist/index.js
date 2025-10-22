@@ -10,7 +10,7 @@ if (typeof window !== 'undefined') {
 export const networks = {
     testnet: {
         networkPassphrase: "Test SDF Network ; September 2015",
-        contractId: "CDZM6CDTSCJCHYXBJKO2YWGEPPLND7YTKVGANDUXVK7HRTBW4K67NAYL",
+        contractId: "CAF5P4ACWH2YIOYRTSMYVTQLDJPLWNXAHAMWV4YEV3WBDAPS55HSWTHS",
     }
 };
 export class Client extends ContractClient {
@@ -31,7 +31,8 @@ export class Client extends ContractClient {
             "AAAAAAAAAAAAAAAFc2xlZXAAAAAAAAABAAAAAAAAAAVvd25lcgAAAAAAABMAAAABAAAH0AAAAANQZXQA",
             "AAAAAAAAAAAAAAAEd29yawAAAAEAAAAAAAAABW93bmVyAAAAAAAAEwAAAAEAAAfQAAAAA1BldAA=",
             "AAAAAAAAAAAAAAAIZXhlcmNpc2UAAAABAAAAAAAAAAVvd25lcgAAAAAAABMAAAABAAAH0AAAAANQZXQA",
-            "AAAAAAAAAAAAAAAMbWludF9nbGFzc2VzAAAAAQAAAAAAAAAFb3duZXIAAAAAAAATAAAAAQAAB9AAAAADUGV0AA=="]), options);
+            "AAAAAAAAAAAAAAAMbWludF9nbGFzc2VzAAAAAQAAAAAAAAAFb3duZXIAAAAAAAATAAAAAQAAB9AAAAADUGV0AA==",
+            "AAAAAAAAAAAAAAAMdXBkYXRlX2NvaW5zAAAAAgAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAAZhbW91bnQAAAAAAAsAAAABAAAACw=="]), options);
         this.options = options;
     }
     fromJSON = {
@@ -43,6 +44,7 @@ export class Client extends ContractClient {
         sleep: (this.txFromJSON),
         work: (this.txFromJSON),
         exercise: (this.txFromJSON),
-        mint_glasses: (this.txFromJSON)
+        mint_glasses: (this.txFromJSON),
+        update_coins: (this.txFromJSON)
     };
 }
