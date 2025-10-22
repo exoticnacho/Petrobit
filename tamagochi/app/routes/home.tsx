@@ -5,8 +5,8 @@ import { ActionButtons } from "~/components/action-button";
 import { useGame } from "~/context/game-context";
 
 export default function Home() {
-  const { gameState } = useGame();
-
+  const { gameState, isLoading, syncWithBlockchain } = useGame();
+  
   // Hitung persentase XP (XP / XP yang dibutuhkan untuk level berikutnya)
   const xpPercentage = Math.min(
     (gameState.stats.xp / gameState.stats.nextLevelXp) * 100,

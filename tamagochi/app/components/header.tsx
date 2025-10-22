@@ -13,7 +13,7 @@ export function Header() {
           {/* Title */}
           <div className="flex-1">
             <h1 className="text-sm sm:text-xl md:text-2xl font-bold pixel-text-shadow">
-              🎮 PIXEL PET
+              🎮 PETROBIT
             </h1>
           </div>
 

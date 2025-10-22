@@ -1,3 +1,5 @@
+// exoticnacho/tamagotchi-pet-feed/.../use-submit-transaction.ts
+
 import { useState } from "react";
 import { TransactionBuilder, rpc } from "@stellar/stellar-sdk";
 import { signTransaction } from "~/config/wallet.client";
@@ -66,9 +68,10 @@ export function useSubmitTransaction(options: UseSubmitTransactionOptions) {
 
               if (status === "SUCCESS") {
                 options.onSuccess?.();
-                return { success: true };
+                return { success: true }; // <--- FIX KRITIS: Wajib return success di sini
               } else if (status === "FAILED") {
-                throw new Error(`Transaction failed: ${JSON.stringify(data.result)}`);
+                // FIX: Melempar error agar ditangkap oleh catch block luar
+                throw new Error(`Transaction failed: ${JSON.stringify(data.result)}`); 
               }
               // If status is still PENDING, continue polling
             }
@@ -78,16 +81,17 @@ export function useSubmitTransaction(options: UseSubmitTransactionOptions) {
               continue;
             }
 
-            throw e;
+            throw e; // Re-throw fatal errors
           }
         }
 
+        // Jika loop while selesai, berarti TIMEOUT
         throw new Error(`Transaction timeout after ${maxAttempts * 2} seconds. Hash: ${txHash}`);
       }
 
-      // If not pending, transaction was accepted
+      // Jika bukan PENDING (misalnya ACCEPTED), asumsikan sukses dan return
       options.onSuccess?.();
-      return { success: true };
+      return { success: true }; // <--- FIX KRITIS: Wajib return success di sini
     } catch (e) {
       options.onError?.(e);
       return { success: false, error: e };

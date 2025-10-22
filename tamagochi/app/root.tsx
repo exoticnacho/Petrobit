@@ -13,6 +13,22 @@ import {
 
 import "./app.css";
 
+const Head = () => (
+  <>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    
+    {/* FIX KRITIS CSP DI SINI */}
+    <meta 
+        httpEquiv="Content-Security-Policy" 
+        content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline';"
+    />
+    
+    <title>Petrobit</title>
+  </>
+);
+
 // Menggunakan fungsi tanpa tipe eksplisit untuk menghindari error compatibility
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

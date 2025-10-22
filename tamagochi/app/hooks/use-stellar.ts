@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import * as Tamago from "../../packages/CAF5P4ACWH2YIOYRTSMYVTQLDJPLWNXAHAMWV4YEV3WBDAPS55HSWTHS";
+import * as Tamago from "../../packages/CBP7BPKMDBW3MV6WC3JRASAWDY3OXJJ7G4WPWIMFOHV7KSDMJ7GAS52U";
 import { useSubmitTransaction } from "./use-submit-transaction";
 import { useWallet } from "./use-wallet";
 
@@ -25,7 +25,7 @@ export const useStellar = () => {
     networkPassphrase: NETWORK_PASSPHRASE,
     rpcUrl: RPC_URL,
     onSuccess: () => {
-      console.log("success submit tx");
+      console.log("success submit tx"); 
     },
     onError: (error) => {
       console.error("Transaction error ", error);
@@ -48,8 +48,12 @@ export const useStellar = () => {
   const execTx = useCallback(
     async (txPromise: Promise<any>) => {
       const tx = await txPromise;
-      // Result di sini adalah Pet struct yang sudah di-update
-      await submit(tx);
+      const submissionResult = await submit(tx);
+      
+      if (!submissionResult.success) {
+          throw submissionResult.error || new Error("Stellar transaction failed during submission/polling.");
+      }
+      // Jika sukses, kembalikan hasilnya.
       return tx.result; 
     },
     [submit]
