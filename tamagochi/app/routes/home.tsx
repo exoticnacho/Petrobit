@@ -7,6 +7,12 @@ import { useGame } from "~/context/game-context";
 export default function Home() {
   const { gameState } = useGame();
 
+  // Hitung persentase XP (XP / XP yang dibutuhkan untuk level berikutnya)
+  const xpPercentage = Math.min(
+    (gameState.stats.xp / gameState.stats.nextLevelXp) * 100,
+    100
+  );
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
       {/* Pet Display */}
@@ -19,9 +25,20 @@ export default function Home() {
         <h2 className="text-sm sm:text-base font-bold uppercase text-center pixel-text-shadow mb-4">
           Pet Stats
         </h2>
+        {/* Stats Bar Lama */}
         <StatsBar label="Hunger" value={gameState.stats.hunger} icon="🍖" color="hunger" />
         <StatsBar label="Happy" value={gameState.stats.happy} icon="😊" color="happy" />
         <StatsBar label="Energy" value={gameState.stats.energy} icon="⚡" color="energy" />
+        
+        {/* BARU: XP Bar - Menggunakan XP dan NextLevelXp */}
+        <StatsBar 
+          label={`Level ${gameState.stats.level} Progress`} 
+          value={xpPercentage} 
+          icon="⭐" 
+          color="level" // Menggunakan 'level' (sudah diperbaiki di stats-bar.tsx)
+        />
+        {/* END BARU */}
+        
       </div>
 
       {/* Action Buttons */}

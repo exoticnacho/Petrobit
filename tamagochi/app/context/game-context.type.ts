@@ -2,6 +2,12 @@ export interface PetStats {
   hunger: number; // 0-100
   happy: number; // 0-100
   energy: number; // 0-100
+  // Leveling
+  level: number;
+  xp: number;
+  nextLevelXp: number;
+  // Species
+  speciesId: number;
 }
 
 export interface GameState {
@@ -22,9 +28,11 @@ export interface GameContextType {
   playWithPet: () => void;
   workWithPet: () => void;
   putPetToSleep: () => void;
+  // Exercise action
+  exercisePet: () => void;
+  mintCoolGlasses: () => void;
   equipItem: (item: string) => void;
   unequipItem: (item: string) => void;
-  mintCoolGlasses: () => void;
   resetGame: () => void;
   createRealPet: (name: string) => void;
   syncWithBlockchain: () => void;

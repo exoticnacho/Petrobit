@@ -1,21 +1,32 @@
 import React from "react";
 
+// Perbaikan: Menambahkan 'level' ke tipe color
 interface StatsBarProps {
   label: string;
   value: number;
   icon: string;
-  color: "hunger" | "happy" | "energy";
+  color: "hunger" | "happy" | "energy" | "level"; 
 }
 
 export function StatsBar({ label, value, icon, color }: StatsBarProps) {
   const getBarColor = () => {
-    if (value > 60) {
-      return color === "hunger" ? "bg-success" : color === "happy" ? "bg-accent" : "bg-secondary";
+    // Logic untuk stat Hunger, Happy, Energy (warna berubah berdasarkan nilai)
+    if (color !== "level") {
+        if (value > 60) {
+            return color === "hunger" ? "bg-success" : color === "happy" ? "bg-accent" : "bg-secondary";
+        }
+        if (value > 30) {
+            return "bg-accent";
+        }
+        return "bg-destructive";
     }
-    if (value > 30) {
-      return "bg-accent";
+    
+    // Logic BARU untuk Level/XP Bar
+    if (color === "level") {
+        return "bg-amber-400 dark:bg-amber-500"; // Warna Gold/Kuning untuk Level
     }
-    return "bg-destructive";
+    
+    return "bg-gray-400"; // Default
   };
 
   return (
@@ -25,7 +36,10 @@ export function StatsBar({ label, value, icon, color }: StatsBarProps) {
           <span>{icon}</span>
           <span className="hidden sm:inline">{label}</span>
         </span>
-        <span className="text-[10px] sm:text-xs font-bold">{Math.round(value)}%</span>
+        <span className="text-[10px] sm:text-xs font-bold">
+          {Math.round(value)}
+          {color !== 'level' ? '%' : ' XP'}
+        </span>
       </div>
       <div className="relative h-4 sm:h-6 bg-muted border-2 border-border overflow-hidden">
         <div
