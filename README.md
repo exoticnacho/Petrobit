@@ -4,7 +4,7 @@
 
 ## 🌌 Deskripsi Proyek
 
-**Petrobit** adalah game peliharaan digital yang sepenuhnya *on-chain* dan *hybrid*, dibangun di atas platform *smart contract* **Soroban (Stellar)**. Petrobit membawa konsep klasik Tamagotchi ke Web3 dengan menggabungkan *state* pet yang diatur oleh kontrak Rust (XP, Level, Species ID) dengan *gameplay frontend* yang kaya, interaktif, dan berisiko/berhadiah.
+**Petrobit** adalah game peliharaan digital yang sepenuhnya *on-chain* dan *hybrid*, dibangun di atas platform *smart contract* **Soroban (Stellar)**. Petrobit membawa konsep klasik Tamagotchi ke Web3 dengan menggabungkan *state* pet yang diatur oleh kontrak Rust (XP, Level, Species ID) dengan *gameplay frontend* yang kaya, interaktif, dan berisiko/berhadiah
 
 Aplikasi ini menggunakan tema visual **"Cosmic Pixel Pet"** baru dengan palet warna angkasa gelap, Neon Green, Bright Cyan, dan aksen Crypto Gold yang dramatis.
 
